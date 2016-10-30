@@ -91,3 +91,6 @@ ENV/
 # Figures
 *.pdf
 *.png
+
+# Emacs crud
+*~
