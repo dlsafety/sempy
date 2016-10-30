@@ -9,7 +9,6 @@ from scipy.special import p_roots
 from pyfem.sem  import SEMhat
 from pyfem.topo import Interval
 from pyfem.poly import gll_points
-#from pyfem.slow_lagrange import eval_phi1d
 from pyfem.poly import eval_lagrange_d0 as eval_phi1d
 
 def kron3(a, b, c):
