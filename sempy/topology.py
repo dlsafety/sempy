@@ -112,3 +112,20 @@ class CubicTopology(object):
         vals = np.ones(len(cols))
         Q = sps.coo_matrix((vals,(rows,cols))).tocsr()
         self.Q = Q
+
+    def get_vertex_ref(self):
+        """ Convenience function
+        """
+        Ex, Ey, Ez = self.Ex, self.Ey, self.Ez
+
+        vertx = np.linspace(-1,1,Ex+1)
+        verty = np.linspace(-1,1,Ey+1)
+        vertz = np.linspace(-1,1,Ez+1)
+
+        XYZ = np.zeros((Ez+1,Ey+1,Ex+1,3))
+        XYZ[:,:,:,0] = vertx[na,na,:]
+        XYZ[:,:,:,1] = verty[na,:,na]
+        XYZ[:,:,:,2] = vertz[:,na,na]
+        vertex_ref = XYZ.reshape((-1,3))
+
+        return vertex_ref
