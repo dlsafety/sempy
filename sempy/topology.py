@@ -24,14 +24,13 @@ class CubicTopology(object):
         Ex, Ey, Ez = self.Ex, self.Ey, self.Ez
         N, periodic = self.N, self.periodic
 
-        nx      = N+1
-        ny      = N+1
-        nz      = N+1
+        self.nx = nx = N+1
+        self.ny = ny = N+1
+        self.nz = nz = N+1
         nx_dofs = N*Ex+1
         ny_dofs = N*Ey+1
         nz_dofs = N*Ez+1
-        n_elem  = Ex*Ey*Ez
-        self.n_elem = n_elem
+        self.n_elem = n_elem = Ex*Ey*Ez
 
         if periodic:
             nx_dofs -= 1
@@ -39,6 +38,9 @@ class CubicTopology(object):
             nz_dofs -= 1
         n_dofs = nz_dofs*ny_dofs*nx_dofs
         self.n_dofs = n_dofs
+        self.nx_dofs = nx_dofs
+        self.ny_dofs = ny_dofs
+        self.nz_dofs = nz_dofs
 
         # Build elem to mesh vertex map
         etv = np.zeros((n_elem, 8), dtype=np.int)
