@@ -90,10 +90,11 @@ class PoissonProblem(object):
         self.dof_phys = dof_phys
 
         # Differentiation operators
-        D1 = kron3(sps.eye(nz), sps.eye(ny), semh.Dh)
-        D2 = kron3(sps.eye(nz), semh.Dh,     sps.eye(nx))
-        D3 = kron3(semh.Dh,     sps.eye(ny), sps.eye(nx))
-        self.D1, self.D2, self.D3 = D1, D2, D3
+        D1 = kron3(sps.eye(nz), sps.eye(ny), semh.Dh).tocsr()
+        D2 = kron3(sps.eye(nz), semh.Dh,     sps.eye(nx)).tocsr()
+        D3 = kron3(semh.Dh,     sps.eye(ny), sps.eye(nx)).tocsr()
+        self.D1,  self.D2,  self.D3  = D1,   D2,   D3
+        self.D1T, self.D2T, self.D3T = D1.T, D2.T, D3.T
 
         # Build mass matrix B
         B = sps.dia_matrix((wvals, 0),
@@ -108,7 +109,8 @@ class PoissonProblem(object):
         G11, G12, G13 = self.G11, self.G12, self.G13
         G21, G22, G23 = self.G21, self.G22, self.G23
         G31, G32, G33 = self.G31, self.G32, self.G33
-        D1, D2, D3 = self.D1, self.D2, self.D3
+        D1,  D2,  D3  = self.D1,  self.D2,  self.D3
+        D1T, D2T, D3T = self.D1T, self.D2T, self.D3T
 
         if apply_R:
             x = R.T.dot(x)
@@ -118,17 +120,17 @@ class PoissonProblem(object):
         y = np.zeros_like(x)
         for i in xrange(n_elem):
             Dx = D1.dot(x[i])
-            y[i] += D1.T.dot(G11[i].dot(Dx))
-            y[i] += D2.T.dot(G21[i].dot(Dx))
-            y[i] += D3.T.dot(G31[i].dot(Dx))
+            y[i] += D1T.dot(G11[i].dot(Dx))
+            y[i] += D2T.dot(G21[i].dot(Dx))
+            y[i] += D3T.dot(G31[i].dot(Dx))
             Dx = D2.dot(x[i])
-            y[i] += D1.T.dot(G12[i].dot(Dx))
-            y[i] += D2.T.dot(G22[i].dot(Dx))
-            y[i] += D3.T.dot(G32[i].dot(Dx))
+            y[i] += D1T.dot(G12[i].dot(Dx))
+            y[i] += D2T.dot(G22[i].dot(Dx))
+            y[i] += D3T.dot(G32[i].dot(Dx))
             Dx = D3.dot(x[i])
-            y[i] += D1.T.dot(G13[i].dot(Dx))
-            y[i] += D2.T.dot(G23[i].dot(Dx))
-            y[i] += D3.T.dot(G33[i].dot(Dx))
+            y[i] += D1T.dot(G13[i].dot(Dx))
+            y[i] += D2T.dot(G23[i].dot(Dx))
+            y[i] += D3T.dot(G33[i].dot(Dx))
 
         y = y.ravel()
         if apply_Q:
