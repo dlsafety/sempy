@@ -90,8 +90,15 @@ class PoissonProblem(object):
         self.G31, self.G32, self.G33 = G31, G32, G33
         self.dof_phys = dof_phys
 
-        # Differentiation operator
-        self.D = semh.Dh
+        # Differentiation operators
+        D = semh.Dh
+        self.D1  = lambda A: kron_IID(D, A)
+        self.D2  = lambda A: kron_IDI(D, A)
+        self.D3  = lambda A: kron_DII(D, A)
+        DT = D.T
+        self.D1T = lambda A: kron_IID(DT, A)
+        self.D2T = lambda A: kron_IDI(DT, A)
+        self.D3T = lambda A: kron_DII(DT, A)
 
         # Build mass matrix B
         B = sps.dia_matrix((wvals, 0),
@@ -107,14 +114,8 @@ class PoissonProblem(object):
         G21, G22, G23 = self.G21, self.G22, self.G23
         G31, G32, G33 = self.G31, self.G32, self.G33
 
-        D   = self.D
-        D1  = lambda A: kron_IID(D, A)
-        D2  = lambda A: kron_IDI(D, A)
-        D3  = lambda A: kron_DII(D, A)
-        DT  = D.T
-        D1T = lambda A: kron_IID(DT, A)
-        D2T = lambda A: kron_IDI(DT, A)
-        D3T = lambda A: kron_DII(DT, A)
+        D1,  D2,  D3  = self.D1,  self.D2,  self.D3
+        D1T, D2T, D3T = self.D1T, self.D2T, self.D3T
 
         if apply_R:
             x = R.T.dot(x)
