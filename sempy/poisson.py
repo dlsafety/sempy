@@ -43,21 +43,21 @@ class PoissonProblem(object):
         quad_ref[:,:,:,2] = xgll[:,na,na]
         quad_ref = quad_ref.reshape((-1,3))
 
-        # build Gij
-        G11 = []
-        G12 = []
-        G13 = []
-        G21 = []
-        G22 = []
-        G23 = []
-        G31 = []
-        G32 = []
-        G33 = []
-
         nn = nx*ny*nz
         s  = (nn, nn)
         dof_phys = np.zeros((nx_dofs*ny_dofs*nz_dofs, 3))
         wvals    = np.zeros(nx_dofs*ny_dofs*nz_dofs)
+
+        # build Gij
+        G11 = np.zeros((n_elem, nn))
+        G12 = np.zeros((n_elem, nn))
+        G13 = np.zeros((n_elem, nn))
+        G21 = np.zeros((n_elem, nn))
+        G22 = np.zeros((n_elem, nn))
+        G23 = np.zeros((n_elem, nn))
+        G31 = np.zeros((n_elem, nn))
+        G32 = np.zeros((n_elem, nn))
+        G33 = np.zeros((n_elem, nn))
 
         etv = topo.elem_to_vertex
         etd = topo.elem_to_dof
@@ -73,17 +73,17 @@ class PoissonProblem(object):
             G0 *= (wv*j)[:,na,na]
             wvals[etd[i]] += (wv*j)
 
-            G11 += [sps.dia_matrix((G0[:,0,0], 0), shape=s)]
-            G12 += [sps.dia_matrix((G0[:,0,1], 0), shape=s)]
-            G13 += [sps.dia_matrix((G0[:,0,2], 0), shape=s)]
+            G11[i,:] = G0[:,0,0]
+            G12[i,:] = G0[:,0,1]
+            G13[i,:] = G0[:,0,2]
 
-            G21 += [sps.dia_matrix((G0[:,1,0], 0), shape=s)]
-            G22 += [sps.dia_matrix((G0[:,1,1], 0), shape=s)]
-            G23 += [sps.dia_matrix((G0[:,1,2], 0), shape=s)]
+            G21[i,:] = G0[:,1,0]
+            G22[i,:] = G0[:,1,1]
+            G23[i,:] = G0[:,1,2]
 
-            G31 += [sps.dia_matrix((G0[:,2,0], 0), shape=s)]
-            G32 += [sps.dia_matrix((G0[:,2,1], 0), shape=s)]
-            G33 += [sps.dia_matrix((G0[:,2,2], 0), shape=s)]
+            G31[i,:] = G0[:,2,0]
+            G32[i,:] = G0[:,2,1]
+            G33[i,:] = G0[:,2,2]
 
         self.G11, self.G12, self.G13 = G11, G12, G13
         self.G21, self.G22, self.G23 = G21, G22, G23
@@ -124,18 +124,31 @@ class PoissonProblem(object):
         x = x.reshape((n_elem, -1))
         y = np.zeros_like(x)
         for i in xrange(n_elem):
+
+            # Keep the steps spit to facilitate profiling
             Dx = D1(x[i])
-            y[i] += D1T(G11[i].dot(Dx))
-            y[i] += D2T(G21[i].dot(Dx))
-            y[i] += D3T(G31[i].dot(Dx))
+            a = G11[i,na]*(Dx)
+            y[i] += D1T(a)
+            a = G21[i,na]*(Dx)
+            y[i] += D2T(a)
+            a = G31[i,na]*(Dx)
+            y[i] += D3T(a)
+
             Dx = D2(x[i])
-            y[i] += D1T(G12[i].dot(Dx))
-            y[i] += D2T(G22[i].dot(Dx))
-            y[i] += D3T(G32[i].dot(Dx))
+            a = G12[i,na]*(Dx)
+            y[i] += D1T(a)
+            a = G22[i,na]*(Dx)
+            y[i] += D2T(a)
+            a = G32[i,na]*(Dx)
+            y[i] += D3T(a)
+
             Dx = D3(x[i])
-            y[i] += D1T(G13[i].dot(Dx))
-            y[i] += D2T(G23[i].dot(Dx))
-            y[i] += D3T(G33[i].dot(Dx))
+            a = G13[i,na]*(Dx)
+            y[i] += D1T(a)
+            a = G23[i,na]*(Dx)
+            y[i] += D2T(a)
+            a = G33[i,na]*(Dx)
+            y[i] += D3T(a)
 
         y = y.ravel()
         if apply_Q:
