@@ -11,19 +11,7 @@ from pyfem.topo import Interval
 from pyfem.poly import gll_points
 from pyfem.poly import eval_lagrange_d0 as eval_phi1d
 
-def kron3(a, b, c):
-    return sps.kron(a, sps.kron(b, c))
-
-def kron_IIa(a, b):
-    return b.dot(a.T)
-
-def kron_IaI(a, b):
-    sa = np.swapaxes
-    return sa(sa(b, 2, 1).dot(a.T), 1, 2)
-
-def kron_aII(a, b):
-    sa = np.swapaxes
-    return sa(sa(b, 2, 0).dot(a.T), 0, 2)
+from tensortools import kron3, kron_DII, kron_IDI, kron_IID
 
 
 class HexCubePoisson(object):
@@ -45,7 +33,7 @@ class HexCubePoisson(object):
         if not periodic:
             n_dofs += 1
         self.n_dofs = n_dofs
-        
+
         semh = SEMhat(N)
 
         vertices = np.linspace(0, L, E+1)
@@ -61,7 +49,7 @@ class HexCubePoisson(object):
         self.jacb_det = jacb_det
 
         if periodic:
-            etv[0,0] = etv[-1,-1]        
+            etv[0,0] = etv[-1,-1]
 
         # Make 1D elem to dof map
         etd = np.arange(E*(N+1))
@@ -117,7 +105,7 @@ class HexCubePoisson(object):
             bndy_dofs = np.array(bndy_dofs, dtype=np.int)
             self.bndy_dofs = bndy_dofs
             dofs = None
-        
+
         ## Build A and B
         Al  = sps.kron(sps.eye(E), semh.Ah/jacb_det)
         A0  = Q0.T.dot(Al.dot(Q0))
@@ -166,9 +154,9 @@ class HexCubePoisson(object):
 
         Assumes that rhs includes boundary dofs if periodic=False.
 
-        :param rhs: 
+        :param rhs:
         :param assemble: Perform assembly
-        :returns: 
+        :returns:
         :rtype:
 
         """
@@ -177,7 +165,7 @@ class HexCubePoisson(object):
         N, E = self.N, self.E
         periodic = self.periodic
         Ah, Bh = self.Ah, self.Bh
-        
+
         if assemble:
             rhs = Q.dot(rhs)
             rhs = rhs.reshape((E**3,-1))
@@ -205,15 +193,16 @@ class HexCubePoisson(object):
 
         U = rhs.reshape((n_eigs, n_eigs, n_eigs))
 
-        W1 = kron_IIa(eigvecs.T, U)
-        W1 = kron_IaI(eigvecs.T, W1)
-        W1 = kron_aII(eigvecs.T, W1)
+        eigvecsT = eigvecs.T
+        W1 = kron_IID(eigvecsT, U)
+        W1 = kron_IDI(eigvecsT, W1)
+        W1 = kron_DII(eigvecsT, W1)
 
         W2 = C1.dot(W1.ravel()).reshape((n_eigs, n_eigs, n_eigs))
 
-        W3 = kron_IIa(eigvecs, W2)
-        W3 = kron_IaI(eigvecs, W3)
-        W3 = kron_aII(eigvecs, W3)
+        W3 = kron_IID(eigvecs, W2)
+        W3 = kron_IDI(eigvecs, W3)
+        W3 = kron_DII(eigvecs, W3)
 
         sol  = R.T.dot(W3.ravel())
 
@@ -241,5 +230,3 @@ class HexCubePoisson(object):
                     ind += 1
 
         return dof_phys
-
-        
