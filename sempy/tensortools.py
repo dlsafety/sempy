@@ -1,5 +1,9 @@
 
 import numpy as np
+import scipy.sparse as sps
+
+def kron3(A, B, C):
+    return sps.kron(A, sps.kron(B, C))
 
 def kron_IID(D, A):
 
