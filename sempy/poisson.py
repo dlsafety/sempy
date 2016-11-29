@@ -5,7 +5,8 @@ import scipy.sparse as sps
 
 from pyfem.sem import SEMhat
 
-kron3 = lambda x,y,z: sps.kron(x,sps.kron(y,z))
+from tensortools import kron3, kron_DII, kron_IDI, kron_IID
+
 
 class PoissonProblem(object):
 
@@ -89,12 +90,8 @@ class PoissonProblem(object):
         self.G31, self.G32, self.G33 = G31, G32, G33
         self.dof_phys = dof_phys
 
-        # Differentiation operators
-        D1 = kron3(sps.eye(nz), sps.eye(ny), semh.Dh).tocsr()
-        D2 = kron3(sps.eye(nz), semh.Dh,     sps.eye(nx)).tocsr()
-        D3 = kron3(semh.Dh,     sps.eye(ny), sps.eye(nx)).tocsr()
-        self.D1,  self.D2,  self.D3  = D1,   D2,   D3
-        self.D1T, self.D2T, self.D3T = D1.T, D2.T, D3.T
+        # Differentiation operator
+        self.D = semh.Dh
 
         # Build mass matrix B
         B = sps.dia_matrix((wvals, 0),
@@ -109,8 +106,15 @@ class PoissonProblem(object):
         G11, G12, G13 = self.G11, self.G12, self.G13
         G21, G22, G23 = self.G21, self.G22, self.G23
         G31, G32, G33 = self.G31, self.G32, self.G33
-        D1,  D2,  D3  = self.D1,  self.D2,  self.D3
-        D1T, D2T, D3T = self.D1T, self.D2T, self.D3T
+
+        D   = self.D
+        D1  = lambda A: kron_IID(D, A)
+        D2  = lambda A: kron_IDI(D, A)
+        D3  = lambda A: kron_DII(D, A)
+        DT  = D.T
+        D1T = lambda A: kron_IID(DT, A)
+        D2T = lambda A: kron_IDI(DT, A)
+        D3T = lambda A: kron_DII(DT, A)
 
         if apply_R:
             x = R.T.dot(x)
@@ -119,18 +123,18 @@ class PoissonProblem(object):
         x = x.reshape((n_elem, -1))
         y = np.zeros_like(x)
         for i in xrange(n_elem):
-            Dx = D1.dot(x[i])
-            y[i] += D1T.dot(G11[i].dot(Dx))
-            y[i] += D2T.dot(G21[i].dot(Dx))
-            y[i] += D3T.dot(G31[i].dot(Dx))
-            Dx = D2.dot(x[i])
-            y[i] += D1T.dot(G12[i].dot(Dx))
-            y[i] += D2T.dot(G22[i].dot(Dx))
-            y[i] += D3T.dot(G32[i].dot(Dx))
-            Dx = D3.dot(x[i])
-            y[i] += D1T.dot(G13[i].dot(Dx))
-            y[i] += D2T.dot(G23[i].dot(Dx))
-            y[i] += D3T.dot(G33[i].dot(Dx))
+            Dx = D1(x[i])
+            y[i] += D1T(G11[i].dot(Dx))
+            y[i] += D2T(G21[i].dot(Dx))
+            y[i] += D3T(G31[i].dot(Dx))
+            Dx = D2(x[i])
+            y[i] += D1T(G12[i].dot(Dx))
+            y[i] += D2T(G22[i].dot(Dx))
+            y[i] += D3T(G32[i].dot(Dx))
+            Dx = D3(x[i])
+            y[i] += D1T(G13[i].dot(Dx))
+            y[i] += D2T(G23[i].dot(Dx))
+            y[i] += D3T(G33[i].dot(Dx))
 
         y = y.ravel()
         if apply_Q:
