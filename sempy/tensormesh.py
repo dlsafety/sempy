@@ -185,7 +185,7 @@ class HexCubePoisson(object):
             v = Q.T.dot(v)
             rhs -= v
 
-        rhs = R.dot(rhs)
+        # rhs = R.dot(rhs)
 
         eigvals, eigvecs = self.eigvals, self.eigvecs
         n_eigs = len(eigvals)
@@ -204,8 +204,9 @@ class HexCubePoisson(object):
         W3 = kron_IDI(eigvecs, W3)
         W3 = kron_DII(eigvecs, W3)
 
-        sol  = R.T.dot(W3.ravel())
-
+        # sol  = R.T.dot(W3.ravel())
+        sol = W3.ravel()
+        
         if periodic:
             sol -= np.mean(sol)
 
