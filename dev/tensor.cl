@@ -118,3 +118,93 @@ void matmat_tile(__global const double *A, __global const double *M,
   }
 
 }
+
+// A is nxn, M is nxk, B is nxk
+__kernel
+void tensor_IIA_single(__global const double *A, __global const double *M,
+                       __global double *B, int n) {
+
+  int gid = get_global_id(0);
+  const int stride = get_global_size(0);
+
+  double sum;
+  while(gid<n) {
+
+    for(int k=0; k<n; ++k) {
+      for(int j=0; j<n; ++j) {
+
+        sum = 0.0;
+        for(int i=0; i<n; ++i)
+          sum += A[n*gid+i]*M[k*n*n+n*j+i];
+
+        B[k*n*n+n*j+gid] = sum;
+
+      }
+
+    }
+
+    gid += stride;
+
+  }
+
+}
+
+// A is nxn, M is nxk, B is nxk
+__kernel
+void tensor_IAI_single(__global const double *A, __global const double *M,
+                       __global double *B, int n) {
+
+  int gid = get_global_id(0);
+  const int stride = get_global_size(0);
+
+  double sum;
+  while(gid<n) {
+
+    for(int k=0; k<n; ++k) {
+      for(int j=0; j<n; ++j) {
+
+        sum = 0.0;
+        for(int i=0; i<n; ++i)
+          sum += A[n*gid+i]*M[k*n*n+n*i+j];
+
+        B[k*n*n+n*gid+j] = sum;
+
+      }
+
+    }
+
+    gid += stride;
+
+  }
+
+}
+
+// A is nxn, M is nxk, B is nxk
+__kernel
+void tensor_AII_single(__global const double *A, __global const double *M,
+                       __global double *B, int n) {
+
+  int gid = get_global_id(0);
+  const int stride = get_global_size(0);
+
+  double sum;
+  while(gid<n) {
+
+    for(int k=0; k<n; ++k) {
+      for(int j=0; j<n; ++j) {
+
+        sum = 0.0;
+        for(int i=0; i<n; ++i)
+          sum += A[n*gid+i]*M[i*n*n+n*k+j];
+
+        B[gid*n*n+n*k+j] = sum;
+
+      }
+
+    }
+
+    gid += stride;
+
+  }
+
+}
