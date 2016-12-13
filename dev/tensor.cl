@@ -22,6 +22,38 @@ void matvec_single(__global const double *A, __global const double *x,
 
 }
 
+__kernel
+void matvec_tile(__global const double *A, __global const double *x,
+                 __global double *b, int n, int tile_size) {
+
+  // Assume n%tile_size==0
+
+  // gid is i_outer
+  int gid = get_global_id(0)*tile_size;
+  const int stride = get_global_size(0)*tile_size;
+  const int T = tile_size;
+
+  double sum;
+  while(gid<n) {
+
+    for(int j_outer=0; j_outer<n/T; ++j_outer) {
+      for(int i_inner=0; i_inner<T; ++i_inner) {
+
+          sum = 0.0;
+          for(int j_inner=0; j_inner<T; ++j_inner)
+            sum += A[(gid+i_inner)*n+j_outer*T+j_inner]*x[j_outer*T+j_inner];
+
+          b[gid+i_inner] += sum;
+
+      }
+    }
+
+    gid += stride;
+
+  }
+
+}
+
 // A is nxn, M is nxk, B is nxk
 __kernel
 void matmat_single(__global const double *A, __global const double *M,
