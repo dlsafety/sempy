@@ -81,3 +81,40 @@ void matmat_single(__global const double *A, __global const double *M,
 
 }
 
+// A is nxn, M is nxk, B is nxk
+__kernel
+void matmat_tile(__global const double *A, __global const double *M,
+                 __global double *B, int n, int k, int tile_size) {
+
+  // Assume n%tile_size==0
+
+  // gid is i_outer
+  int gid = get_global_id(0)*tile_size;
+  const int stride = get_global_size(0)*tile_size;
+  const int T = tile_size;
+
+  double sum;
+  while(gid<n) {
+
+    for(int j_outer=0; j_outer<n/T; ++j_outer) {
+      for(int k_outer=0; k_outer<k/T; ++k_outer) {
+        for(int i_inner=0; i_inner<T; ++i_inner) {
+          for(int k_inner=0; k_inner<T; ++k_inner) {
+
+            sum = 0.0;
+            for(int j_inner=0; j_inner<T; ++j_inner)
+              sum += A[(gid+i_inner)*n+j_outer*T+j_inner]*M[(j_outer*T+j_inner)*k+k_outer*T+k_inner];
+
+            B[(gid+i_inner)*k+k_outer*T+k_inner] += sum;
+
+          }
+        }
+
+      }
+    }
+
+    gid += stride;
+
+  }
+
+}
