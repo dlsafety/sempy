@@ -208,3 +208,132 @@ void tensor_AII_single(__global const double *A, __global const double *M,
   }
 
 }
+
+__kernel
+void tensor_IIA_tile(__global const double *A, __global const double *M,
+                     __global double *B, int n, int tile_size) {
+
+  // Assume n%tile_size==0
+
+  // gid is i_outer
+  int gid = get_global_id(0)*tile_size;
+  const int stride = get_global_size(0)*tile_size;
+  const int T = tile_size;
+
+  double sum;
+  while(gid<n) {
+
+    for(int m=0; m<n; ++m) {
+
+      for(int j_outer=0; j_outer<n/T; ++j_outer) {
+        for(int k_outer=0; k_outer<n/T; ++k_outer) {
+          for(int i_inner=0; i_inner<T; ++i_inner) {
+            for(int k_inner=0; k_inner<T; ++k_inner) {
+
+              sum = 0.0;
+              for(int j_inner=0; j_inner<T; ++j_inner)
+                sum += A[(gid+i_inner)*n+j_outer*T+j_inner]*M[m*n+
+                                                              (j_outer*T+j_inner)+
+                                                              (k_outer*T+k_inner)*n*n];
+
+              B[m*n+(gid+i_inner)+(k_outer*T+k_inner)*n*n] += sum;
+
+            }
+          }
+
+        }
+      }
+
+    }
+
+    gid += stride;
+
+  }
+
+}
+
+__kernel
+void tensor_IAI_tile(__global const double *A, __global const double *M,
+                     __global double *B, int n, int tile_size) {
+
+  // Assume n%tile_size==0
+
+  // gid is i_outer
+  int gid = get_global_id(0)*tile_size;
+  const int stride = get_global_size(0)*tile_size;
+  const int T = tile_size;
+
+  double sum;
+  while(gid<n) {
+
+    for(int m=0; m<n; ++m) {
+
+      for(int j_outer=0; j_outer<n/T; ++j_outer) {
+        for(int k_outer=0; k_outer<n/T; ++k_outer) {
+          for(int i_inner=0; i_inner<T; ++i_inner) {
+            for(int k_inner=0; k_inner<T; ++k_inner) {
+
+              sum = 0.0;
+              for(int j_inner=0; j_inner<T; ++j_inner)
+                sum += A[(gid+i_inner)*n+j_outer*T+j_inner]*M[(j_outer*T+j_inner)*n+
+                                                              k_outer*T+k_inner+
+                                                              m*n*n];
+
+              B[(gid+i_inner)*n+k_outer*T+k_inner+m*n*n] += sum;
+
+            }
+          }
+
+        }
+      }
+
+    }
+
+    gid += stride;
+
+  }
+
+}
+
+__kernel
+void tensor_AII_tile(__global const double *A, __global const double *M,
+                     __global double *B, int n, int tile_size) {
+
+  // Assume n%tile_size==0
+
+  // gid is i_outer
+  int gid = get_global_id(0)*tile_size;
+  const int stride = get_global_size(0)*tile_size;
+  const int T = tile_size;
+
+  double sum;
+  while(gid<n) {
+
+    for(int m=0; m<n; ++m) {
+
+      for(int j_outer=0; j_outer<n/T; ++j_outer) {
+        for(int k_outer=0; k_outer<n/T; ++k_outer) {
+          for(int i_inner=0; i_inner<T; ++i_inner) {
+            for(int k_inner=0; k_inner<T; ++k_inner) {
+
+              sum = 0.0;
+              for(int j_inner=0; j_inner<T; ++j_inner)
+                sum += A[(gid+i_inner)*n+j_outer*T+j_inner]*M[m*n+
+                                                              (j_outer*T+j_inner)*n*n+
+                                                              (k_outer*T+k_inner)];
+
+              B[m*n+(gid+i_inner)*n*n+(k_outer*T+k_inner)] += sum;
+
+            }
+          }
+
+        }
+      }
+
+    }
+
+    gid += stride;
+
+  }
+
+}
