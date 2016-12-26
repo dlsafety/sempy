@@ -243,27 +243,28 @@ void tensor_tile(__global const double *A, __global const double *M,
   double sum;
   while(gid<n) {
 
-    for(int m=0; m<n; ++m) {
-
+    for(int m_outer=0; m_outer<n/T; ++m_outer) {
       for(int j_outer=0; j_outer<n/T; ++j_outer) {
         for(int k_outer=0; k_outer<n/T; ++k_outer) {
-          for(int i_inner=0; i_inner<T; ++i_inner) {
-            for(int k_inner=0; k_inner<T; ++k_inner) {
 
-              sum = 0.0;
-              for(int j_inner=0; j_inner<T; ++j_inner)
-                sum += A[(gid+i_inner)*n+j_outer*T+j_inner]*M[m*nm+
-                                                              (j_outer*T+j_inner)*nj+
-                                                              (k_outer*T+k_inner)*nk];
+          for(int m_inner=0; m_inner<T; ++m_inner) {
+            for(int i_inner=0; i_inner<T; ++i_inner) {
+              for(int k_inner=0; k_inner<T; ++k_inner) {
 
-              B[m*nm+(gid+i_inner)*ni+(k_outer*T+k_inner)*nk] += sum;
+                sum = 0.0;
+                for(int j_inner=0; j_inner<T; ++j_inner)
+                  sum += A[(gid+i_inner)*n+j_outer*T+j_inner]*M[(m_outer*T+m_inner)*nm+
+                                                                (j_outer*T+j_inner)*nj+
+                                                                (k_outer*T+k_inner)*nk];
 
+                B[(m_outer*T+m_inner)*nm+(gid+i_inner)*ni+(k_outer*T+k_inner)*nk] += sum;
+
+              }
             }
-          }
 
+          }
         }
       }
-
     }
 
     gid += stride;
