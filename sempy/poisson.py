@@ -3,7 +3,7 @@ import numpy as np
 na = np.newaxis
 import scipy.sparse as sps
 
-from pyfem.sem import SEMhat
+from sem import SEMhat
 
 from tensortools import kron3, kron_DII, kron_IDI, kron_IID
 
