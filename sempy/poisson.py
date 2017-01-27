@@ -22,7 +22,7 @@ class PoissonProblem(object):
 
         self.semh = SEMhat(self.N)
 
-    def build(self, vertex_phys):
+    def build(self, node_phys):
 
         topo, lmap = self.topo, self.lmap
         N, semh = self.N, self.semh
@@ -63,7 +63,7 @@ class PoissonProblem(object):
         etd = topo.elem_to_dof
         for i in range(n_elem):
 
-            ver = vertex_phys[etv[i]]
+            ver = node_phys[etv[i]]
             J   = lmap.calc_jacb(quad_ref, ver)
             Ji  = np.linalg.inv(J)
             j   = np.linalg.det(J).ravel()
