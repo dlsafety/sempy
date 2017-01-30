@@ -119,3 +119,9 @@ class LinearIsopMap(object):
         J[:,2,2] = t3z
 
         return J
+
+    def is_interior(self, X, tol=1e-12):
+        """ Checks if points are in the interior of the reference element
+        """
+
+        return np.max(np.abs(X), axis=-1)<=1.0+tol

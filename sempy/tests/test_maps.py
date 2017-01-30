@@ -36,3 +36,7 @@ class TestLinearIsopMap(unittest.TestCase):
         err = mnorm(Z-ref)
 
         self.assertTrue(err<self.tol)
+
+        is_interior = np.array([True,True,True,True,
+                                False,False,False])
+        self.assertTrue(np.all(is_interior==lmap.is_interior(Z)))
