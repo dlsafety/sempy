@@ -51,15 +51,19 @@ class LinearIsopMap(object):
     _tol_phys_to_ref = 1e-14
     def phys_to_ref(self, Y, nodes):
 
+        solve = scipy.optimize.broyden1
         rtop   = self.ref_to_phys
-        center = rtop(np.array([[0.,0.,0.]]), nodes).ravel()
 
+        # Build initial guess
+        center = rtop(np.array([[0.,0.,0.]]), nodes).ravel()
+        h  = np.max(np.abs(nodes[1]-nodes[0]))
+        x0 = (Y-center)*2.0/h
+
+        # Solve the non-linear system
         def F(x):
             return Y-rtop(x, nodes)
-
-        solve = scipy.optimize.broyden1
         f_tol = self._tol_phys_to_ref
-        xref = solve(F, Y-center, f_tol=f_tol)
+        xref = solve(F, x0, f_tol=f_tol)
 
         return xref
 
