@@ -24,6 +24,7 @@ class PoissonProblem(object):
 
     def build(self, node_phys):
 
+        self.node_phys = node_phys
         topo, lmap = self.topo, self.lmap
         N, semh = self.N, self.semh
 

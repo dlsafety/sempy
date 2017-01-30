@@ -1,6 +1,7 @@
 
 import numpy as np
 na = np.newaxis
+import scipy.optimize
 
 class LinearIsopMap(object):
 
@@ -33,6 +34,21 @@ class LinearIsopMap(object):
             (v2x*v2y*v2z)[:,na]*nodes[7,:]
 
         return P
+
+    _tol_phys_to_ref = 1e-14
+    def phys_to_ref(self, Y, nodes):
+
+        rtop   = self.ref_to_phys
+        center = rtop(np.array([[0.,0.,0.]]), nodes).ravel()
+
+        def F(x):
+            return Y-rtop(x, nodes)
+
+        solve = scipy.optimize.broyden1
+        f_tol = self._tol_phys_to_ref
+        xref = solve(F, Y-center, f_tol=f_tol)
+
+        return xref
 
     def calc_jacb(self, X, nodes):
 
