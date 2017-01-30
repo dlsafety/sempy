@@ -5,6 +5,19 @@ import scipy.optimize
 
 class LinearIsopMap(object):
 
+
+    vertex_ref = np.array([[-1,-1,-1],
+                           [ 1,-1,-1],
+                           [-1, 1,-1],
+                           [ 1, 1,-1],
+                           [-1,-1, 1],
+                           [ 1,-1, 1],
+                           [-1, 1, 1],
+                           [ 1, 1, 1]],
+                          dtype=np.double)
+
+    node_ref = vertex_ref
+
     def __init__(self):
         pass
 
