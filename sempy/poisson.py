@@ -101,10 +101,20 @@ class PoissonProblem(object):
         self.D2T = lambda A: kron_IDI(DT, A)
         self.D3T = lambda A: kron_DII(DT, A)
 
-        # Build mass matrix B
+        # Build diagonal mass matrix B
         B = sps.dia_matrix((wvals, 0),
                            shape=(n_dofs,n_dofs))
         self.B = B
+
+        # Compute all element centers
+        rtop = lmap.ref_to_phys
+        zero = np.array([[0.,0.,0.]])
+        centers = np.zeros((n_elem, 3))
+        for ielem in range(n_elem):
+            nodes = node_phys[etv[ielem]]
+            centers[ielem] = rtop(zero, nodes).ravel()
+        self.centers = centers
+
 
     def apply_A(self, x, apply_R=True, apply_Q=True):
 
