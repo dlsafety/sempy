@@ -169,3 +169,39 @@ class PoissonProblem(object):
 
         return y
 
+    def find_elem_ref(self, X):
+
+        assert X.ndim==2 and X.shape[1]==3
+
+        # Return values
+        relem = np.zeros(len(X),  dtype=np.int)
+        rref  = np.zeros(X.shape, dtype=np.double)
+
+        node_phys = self.node_phys
+        etn       = self.topo.elem_to_vertex
+        etd       = self.topo.elem_to_dof
+        lmap      = self.lmap
+        semh      = self.semh
+
+        for ix in range(len(X)):
+
+            x = X[ix,:]
+
+            r2 = np.sum((self.centers-x)**2, axis=-1)
+            elem_inds = np.argsort(r2)
+            elem_id = -1
+            for ielem in elem_inds:
+                nodes = node_phys[etn[ielem]]
+                xref = lmap.phys_to_ref(x[na,:], nodes)
+                if np.all(lmap.is_interior(xref)):
+                    elem_id = ielem
+                    ref     = xref.copy()
+                    break
+
+            if elem_id==-1:
+                raise LookupError("Element not found: "+str(x))
+
+            relem[ix]  = ielem
+            rref[ix,:] = ref
+
+        return (relem, rref)
