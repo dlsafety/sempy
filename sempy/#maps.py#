@@ -65,6 +65,8 @@ class LinearIsopMap(object):
 
         f_tol = self._tol_phys_to_ref
         if np.max(np.abs(F(x0)))<f_tol:
+            # For some godforsaken reason the non-linear solver fails
+            # when the initial guess is too good
             return x0
         else:
             xref = solve(F, x0, f_tol=f_tol)
