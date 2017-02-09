@@ -169,7 +169,7 @@ class PoissonProblem(object):
 
         return y
 
-    def find_elem_ref(self, X):
+    def find_elem_ref(self, X, max_elem_tries=27):
 
         assert X.ndim==2 and X.shape[1]==3
 
@@ -183,6 +183,8 @@ class PoissonProblem(object):
         lmap      = self.lmap
         semh      = self.semh
 
+        max_elem_tries = min(self.n_elem, max_elem_tries)
+
         for ix in range(len(X)):
 
             x = X[ix,:]
@@ -190,9 +192,10 @@ class PoissonProblem(object):
             r2 = np.sum((self.centers-x)**2, axis=-1)
             elem_inds = np.argsort(r2)
             elem_id = -1
-            for ielem in elem_inds:
+            for ielem in elem_inds[:max_elem_tries]:
                 nodes = node_phys[etn[ielem]]
                 xref = lmap.phys_to_ref(x[na,:], nodes)
+
                 if np.all(lmap.is_interior(xref)):
                     elem_id = ielem
                     ref     = xref.copy()
