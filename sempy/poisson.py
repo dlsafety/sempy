@@ -16,9 +16,6 @@ class PoissonProblem(object):
         self.N    = topo.N
         self.n_elem  = topo.n_elem
         self.n_dofs  = topo.n_dofs
-        self.nx_dofs = topo.nx_dofs
-        self.ny_dofs = topo.ny_dofs
-        self.nz_dofs = topo.nz_dofs
 
         self.semh = SEMhat(self.N)
 
@@ -28,9 +25,7 @@ class PoissonProblem(object):
         topo, lmap = self.topo, self.lmap
         N, semh = self.N, self.semh
 
-        nx, ny, nz = topo.nx, topo.ny, topo.nz
-        nx_dofs, ny_dofs = topo.nx_dofs, topo.ny_dofs
-        nz_dofs, n_elem  = topo.nz_dofs, topo.n_elem
+        n_elem = topo.n_elem
         n_dofs = topo.n_dofs
 
         wgll = semh.wgll
@@ -44,10 +39,9 @@ class PoissonProblem(object):
         quad_ref[:,:,:,2] = xgll[:,na,na]
         quad_ref = quad_ref.reshape((-1,3))
 
-        nn = nx*ny*nz
-        s  = (nn, nn)
-        dof_phys = np.zeros((nx_dofs*ny_dofs*nz_dofs, 3))
-        wvals    = np.zeros(nx_dofs*ny_dofs*nz_dofs)
+        nn = (self.N+1)**3
+        dof_phys = np.zeros((n_dofs, 3))
+        wvals    = np.zeros(n_dofs)
 
         # build Gij
         G11 = np.zeros((n_elem, nn))
