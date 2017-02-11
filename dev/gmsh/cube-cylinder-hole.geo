@@ -45,6 +45,16 @@ Line Loop(76) = {50, -22, -26, -54};
 Plane Surface(77) = {76};
 
 
+Surface Loop(78) = {41, 19, 65, 73, 37, 45};
+Volume(79) = {78};
+Surface Loop(80) = {61, 17, 33, 71, 37, 29};
+Volume(81) = {80};
+Surface Loop(82) = {25, 15, 57, 77, 29, 53};
+Volume(83) = {82};
+Surface Loop(84) = {69, 21, 49, 75, 45, 53};
+Volume(85) = {84};
+
+
 // Transfinite Line "*";
 Transfinite Surface "*";
 Recombine Surface "*";
