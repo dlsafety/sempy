@@ -1,5 +1,6 @@
 
 import numpy as np
+import scipy.sparse as sps
 
 import meshpy
 from meshpy.gmsh_reader import read_gmsh
@@ -233,15 +234,33 @@ class MeshGmsh(object):
         self._build_elem_to_dof()
         elem_to_dof = self.elem_to_dof
 
-
         bdofs = [vertex_to_dof[self.boundary_vertices].ravel(),
                  edge_to_dof[self.boundary_edges].ravel()]
         bdofs.append(face_to_dof[self.boundary_faces].ravel())
         self.boundary_dofs = np.hstack(bdofs)
+        n_boundary_dofs = len(self.boundary_dofs)
+        self.n_boundary_dofs = n_boundary_dofs
 
         assert np.all(elem_to_dof>=0)
         assert np.max(elem_to_dof)==(self.n_dofs-1)
-        self.elem_to_dof = elem_to_dof
+
+        # Build operators
+        cols = elem_to_dof.ravel()
+        rows = np.arange(len(cols))
+        vals = np.ones(len(cols))
+        Q = sps.coo_matrix((vals,(rows,cols))).tocsr()
+        self.Q = Q
+
+        n_dofs = self.n_dofs
+        mask = np.ones(n_dofs, dtype=bool)
+        mask[self.boundary_dofs] = False
+        cols = np.arange(n_dofs)[mask]
+        rows = np.arange(n_dofs-n_boundary_dofs)
+        vals = np.ones(len(cols), dtype=np.int)
+        R = sps.coo_matrix((vals, (rows, cols)),
+                           shape=(n_dofs-n_boundary_dofs, n_dofs)).tocsr()
+        self.R = R
+
 
 
     def _build_elem_to_dof(self):
