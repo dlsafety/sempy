@@ -82,6 +82,9 @@ class MeshGmsh(object):
         nodes = np.array(mr.points)
         self.nodes = nodes
 
+        vertices = nodes
+        self.vertices = vertices
+
         # Switch nodes to lex ordering
         inds = hex_type.get_lexicographic_gmsh_node_indices()
         elem_to_node = elem_to_node[:,inds]
@@ -93,6 +96,9 @@ class MeshGmsh(object):
 
         elem_to_vertex = elem_to_node
         self.elem_to_vertex = elem_to_vertex
+
+        boundary_vertices = np.unique(bndy_face_to_node.ravel())
+        self.boundary_vertices = boundary_vertices
 
         # Spot check the numberings
         assert np.all(np.unique(elem_to_node)==np.arange(len(nodes)))
@@ -158,3 +164,30 @@ class MeshGmsh(object):
         self.elem_to_face = elem_to_face
         self.face_to_vertex = face_to_vertex
         self.face_id = face_id
+
+        self.n_elems    = len(elem_to_vertex)
+        self.n_vertices = len(vertices)
+        self.n_edges    = len(edge_id)
+        self.n_faces    = len(face_id)
+
+        # Find edges on the boundary
+        boundary_edges = []
+        for iedge in range(self.n_edges):
+            edge = self.edge_to_vertex[iedge]
+            if (edge[0] in boundary_vertices) and\
+               (edge[1] in boundary_vertices):
+                boundary_edges.append(iedge)
+        boundary_edges = np.array(boundary_edges, dtype=np.int)
+        self.boundary_edges = boundary_edges
+
+        # Find faces on the boundary
+        boundary_faces = []
+        for iface in range(self.n_faces):
+            face = self.face_to_vertex[iface]
+            if (face[0] in boundary_vertices) and\
+               (face[1] in boundary_vertices) and\
+               (face[2] in boundary_vertices) and\
+               (face[3] in boundary_vertices):
+                boundary_faces.append(iface)
+        boundary_faces = np.array(boundary_faces, dtype=np.int)
+        self.boundary_faces = boundary_faces
