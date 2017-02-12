@@ -66,13 +66,6 @@ class LagrangeBasisHex(TensorBasis3D):
                 n_dof_per_face*self.n_faces+\
                 n_dof_per_bubble)==self.n_dofs
 
-        dof_ref = []
-        ind = 0
-        for iz in range(order+1):
-            for iy in range(order+1):
-                for ix in range(order+1):
-                    dof_ref.append((roots[ix], roots[iy], roots[iz]))
-
         vertex_to_dof = np.zeros((self.n_vertices, n_dof_per_vertex),
                                  dtype=np.int)
         edge_to_dof   = np.zeros((self.n_edges, n_dof_per_edge),
@@ -138,5 +131,3 @@ class LagrangeBasisHex(TensorBasis3D):
         self.n_dof_per_edge   = n_dof_per_edge
         self.n_dof_per_face   = n_dof_per_face
         self.n_dof_per_bubble = n_dof_per_bubble
-        self.dof_ref = np.array(dof_ref, dtype=np.double)
-
