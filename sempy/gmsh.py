@@ -23,6 +23,8 @@ class MeshGmsh(object):
 
     def build(self, file_name):
 
+        ### Parse gmsh file
+        ###################
         mr = GmshMeshReceiverNumPy()
         read_gmsh(mr, file_name)
 
@@ -94,3 +96,65 @@ class MeshGmsh(object):
 
         # Spot check the numberings
         assert np.all(np.unique(elem_to_node)==np.arange(len(nodes)))
+
+
+        ### Build connectivity arrays
+        #############################
+        geom = HexElement
+
+        # Build set of edges and edge maps
+        elem_to_edge = np.zeros((len(elem_to_vertex),
+                                geom.n_edges), dtype=np.int)
+        edge_id = {}
+        eid = 0
+        for ielem in range(len(elem_to_vertex)):
+            etv = elem_to_vertex[ielem]
+            elem_edges = etv[geom.edge_to_vertex]
+            for iedge in range(geom.n_edges):
+                edge = elem_edges[iedge]
+                edge.sort()
+                t = tuple(edge)
+                if not t in edge_id:
+                    edge_id[t] = eid
+                    eid += 1
+                elem_to_edge[ielem, iedge] = edge_id[t]
+
+        assert len(edge_id)==eid
+        edge_to_vertex = np.zeros((len(edge_id), geom.n_vertex_per_edge),
+                                  dtype=np.int)
+        for k, v in edge_id.iteritems():
+            edge_to_vertex[v, :] = k
+        assert np.all(edge_to_vertex[:,0]<edge_to_vertex[:,1])
+        self.elem_to_edge = elem_to_edge
+        self.edge_to_vertex = edge_to_vertex
+        self.edge_id = edge_id
+
+        # Build set of faces and face maps
+        elem_to_face = np.zeros((len(elem_to_vertex),
+                                 geom.n_faces), dtype=np.int)
+        face_id = {}
+        fid = 0
+        for ielem in range(len(elem_to_vertex)):
+            etv = elem_to_vertex[ielem]
+            elem_faces = etv[geom.face_to_vertex]
+            for iface in range(geom.n_faces):
+                face = elem_faces[iface]
+                face.sort()
+                t = tuple(face)
+                if not t in face_id:
+                    face_id[t] = fid
+                    fid += 1
+                elem_to_face[ielem, iface] = face_id[t]
+
+        assert len(face_id)==fid
+        face_to_vertex = np.zeros((len(face_id), geom.n_vertex_per_face),
+                                  dtype=np.int)
+        for k, v in face_id.iteritems():
+            face_to_vertex[v, :] = k
+
+        assert np.all(face_to_vertex[:,0]<face_to_vertex[:,1])
+        assert np.all(face_to_vertex[:,1]<face_to_vertex[:,2])
+        assert np.all(face_to_vertex[:,2]<face_to_vertex[:,3])
+        self.elem_to_face = elem_to_face
+        self.face_to_vertex = face_to_vertex
+        self.face_id = face_id
