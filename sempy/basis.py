@@ -2,7 +2,7 @@
 import numpy as np
 
 
-class TensorBasis3D(object):
+class HexElement(object):
 
     vertices = np.array([[-1,-1,-1],
                          [ 1,-1,-1],
@@ -44,22 +44,19 @@ class TensorBasis3D(object):
     n_vertex_per_face = 4
 
 
-class LagrangeBasisHex(TensorBasis3D):
+class LagrangeBasisHex(HexElement):
 
     is_nodal = True
 
-    def __init__(self, order):
-        self.order = order
-        self.q = q = order+1
-        self.n_dofs = (order+1)**3
-
-        roots = np.linspace(-1, 1, order+1)
-        self.roots = roots
+    def __init__(self, N):
+        self.N = N
+        self.q = q = N+1
+        self.n_dofs = (N+1)**3
 
         n_dof_per_vertex = 1
-        n_dof_per_edge   = order-1
-        n_dof_per_face   = (order-1)**2
-        n_dof_per_bubble = (order-1)**3
+        n_dof_per_edge   = N-1
+        n_dof_per_face   = (N-1)**2
+        n_dof_per_bubble = (N-1)**3
 
         assert (n_dof_per_vertex*self.n_vertices+\
                 n_dof_per_edge*self.n_edges+\
@@ -76,10 +73,9 @@ class LagrangeBasisHex(TensorBasis3D):
                                  dtype=np.int)
 
         # Assign DOF mappings
-        nd = order+1
+        nd = N+1
         dofs = np.arange(nd**3, dtype=np.int).reshape((nd,nd,nd))
 
-        print dofs
         vertex_to_dof[0,0] = dofs[0,0,0]
         vertex_to_dof[1,0] = dofs[0,0,-1]
         vertex_to_dof[2,0] = dofs[0,-1,0]
