@@ -199,6 +199,7 @@ class MeshGmsh(object):
     def add_basis(self, basis):
 
         self.basis = basis
+        self.N = basis.N
 
         # DOF counts
         self.n_dofs = self.n_vertices*basis.n_dof_per_vertex+\
