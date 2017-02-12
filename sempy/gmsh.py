@@ -107,6 +107,7 @@ class MeshGmsh(object):
         ### Build connectivity arrays
         #############################
         geom = HexElement
+        self.geom = geom
 
         # Build set of edges and edge maps
         elem_to_edge = np.zeros((len(elem_to_vertex),
@@ -165,6 +166,7 @@ class MeshGmsh(object):
         self.face_to_vertex = face_to_vertex
         self.face_id = face_id
 
+        # Add component counts
         self.n_elems    = len(elem_to_vertex)
         self.n_vertices = len(vertices)
         self.n_edges    = len(edge_id)
@@ -191,3 +193,82 @@ class MeshGmsh(object):
                 boundary_faces.append(iface)
         boundary_faces = np.array(boundary_faces, dtype=np.int)
         self.boundary_faces = boundary_faces
+
+
+    def add_basis(self, basis):
+
+        self.basis = basis
+
+        # DOF counts
+        self.n_dofs = self.n_vertices*basis.n_dof_per_vertex+\
+                      self.n_edges*basis.n_dof_per_edge+\
+                      self.n_faces*basis.n_dof_per_face+\
+                      self.n_elems*basis.n_dof_per_bubble
+
+        # Vertex DOFs
+        n_vertex_dofs = self.n_vertices*basis.n_dof_per_vertex
+        vertex_to_dof = np.arange(n_vertex_dofs)
+        self.vertex_to_dof = vertex_to_dof.reshape((self.n_vertices,-1))
+
+        # Edge DOFs
+        n_edge_dofs = self.n_edges*basis.n_dof_per_edge
+        edge_dofs   = np.arange(n_edge_dofs)+n_vertex_dofs
+        edge_to_dof = edge_dofs.reshape((self.n_edges, -1))
+        self.edge_to_dof = edge_to_dof
+
+        # Face DOFs
+        n_face_dofs = self.n_faces*basis.n_dof_per_face
+        face_dofs   = np.arange(n_face_dofs)+n_vertex_dofs+n_edge_dofs
+        face_to_dof = face_dofs.reshape((self.n_faces, -1))
+        self.face_to_dof = face_to_dof
+
+        # Bubble DOFs
+        n_bubble_dofs = self.n_elems*basis.n_dof_per_bubble
+        bubble_dofs = np.arange(n_bubble_dofs)+n_vertex_dofs\
+                      +n_edge_dofs+n_face_dofs
+        bubble_to_dof = bubble_dofs.reshape((self.n_elems, -1))
+        self.bubble_to_dof = bubble_to_dof
+
+        # Build elem to dof map
+        self._build_elem_to_dof()
+        elem_to_dof = self.elem_to_dof
+
+
+        bdofs = [vertex_to_dof[self.boundary_vertices].ravel(),
+                 edge_to_dof[self.boundary_edges].ravel()]
+        bdofs.append(face_to_dof[self.boundary_faces].ravel())
+        self.boundary_dofs = np.hstack(bdofs)
+
+        assert np.all(elem_to_dof>=0)
+        assert np.max(elem_to_dof)==(self.n_dofs-1)
+        self.elem_to_dof = elem_to_dof
+
+
+    def _build_elem_to_dof(self):
+        """ Assumes vertex,edge and face maps exist
+        """
+
+        basis = self.basis
+        elem_to_dof = np.zeros((self.n_elems, basis.n_dofs),
+                                dtype=np.int)-1
+
+        vertex_to_dof = self.vertex_to_dof
+        elem_to_vertex = self.elem_to_vertex
+        bvtd = basis.vertex_to_dof.ravel()
+        elem_to_dof[:,bvtd] = vertex_to_dof[elem_to_vertex].reshape((self.n_elems, -1))
+
+        edge_to_dof = self.edge_to_dof
+        elem_to_edge = self.elem_to_edge
+        betd = basis.edge_to_dof.ravel()
+        elem_to_dof[:,betd] = edge_to_dof[elem_to_edge].reshape((self.n_elems, -1))
+
+        face_to_dof = self.face_to_dof
+        elem_to_face = self.elem_to_face
+        bftd = basis.face_to_dof.ravel()
+        elem_to_dof[:,bftd] = face_to_dof[elem_to_face].reshape((self.n_elems, -1))
+
+        bubble_to_dof = self.bubble_to_dof
+        bbtd = basis.bubble_to_dof.ravel()
+        elem_to_dof[:,bbtd] = bubble_to_dof
+
+        self.elem_to_dof = elem_to_dof
