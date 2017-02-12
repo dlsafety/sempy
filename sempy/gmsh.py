@@ -9,8 +9,12 @@ from meshpy.gmsh_reader import (GmshMeshReceiverNumPy,
                                 GmshPoint,
                                 GmshIntervalElement)
 
+from basis import HexElement
+
+
 class InvalidGmshMesh(Exception):
     pass
+
 
 class MeshGmsh(object):
 
@@ -74,6 +78,7 @@ class MeshGmsh(object):
 
         # Nodes array
         nodes = np.array(mr.points)
+        self.nodes = nodes
 
         # Switch nodes to lex ordering
         inds = hex_type.get_lexicographic_gmsh_node_indices()
@@ -86,3 +91,6 @@ class MeshGmsh(object):
 
         elem_to_vertex = elem_to_node
         self.elem_to_vertex = elem_to_vertex
+
+        # Spot check the numberings
+        assert np.all(np.unique(elem_to_node)==np.arange(len(nodes)))
