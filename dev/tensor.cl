@@ -216,8 +216,8 @@ void tensor_tile(__global const double *A, __global const double *M,
   // Assume n%tile_size==0
 
   // gid is i_outer*T
-  int gid = get_global_id(0)*tile_size;
-  const int stride = get_global_size(0)*tile_size;
+  int i_outer = get_global_id(0);
+  const int stride = get_global_size(0);
   const int T = tile_size;
 
   int ni, nj, nk, nm;
@@ -242,14 +242,14 @@ void tensor_tile(__global const double *A, __global const double *M,
 
   int i_ind, j_ind, k_ind, m_ind;
   double sum;
-  while(gid<n) {
+  while(i_outer<n/T) {
 
     for(int m_outer=0; m_outer<n/T; ++m_outer) {
       for(int j_outer=0; j_outer<n/T; ++j_outer) {
         for(int k_outer=0; k_outer<n/T; ++k_outer) {
 
           for(int m_inner=0; m_inner<T; ++m_inner) { m_ind = m_outer*T+m_inner;
-            for(int i_inner=0; i_inner<T; ++i_inner) { i_ind = gid+i_inner;
+            for(int i_inner=0; i_inner<T; ++i_inner) { i_ind = i_outer*T+i_inner;
               for(int k_inner=0; k_inner<T; ++k_inner) { k_ind = k_outer*T+k_inner;
 
                 sum = 0.0;
@@ -267,7 +267,7 @@ void tensor_tile(__global const double *A, __global const double *M,
       }
     }
 
-    gid += stride;
+    i_outer += stride;
 
   }
 
