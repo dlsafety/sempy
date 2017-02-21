@@ -69,6 +69,8 @@ class LinearIsopMap(object):
             # when the initial guess is too good
             return x0
         else:
+            # Same thing for each of the dimensions
+            x0 += 0.1*(np.abs(F(x0))<1e-6)
             xref = solve(F, x0, f_tol=f_tol)
             return xref
 
