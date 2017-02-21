@@ -2,6 +2,7 @@
 import numpy as np
 na = np.newaxis
 import scipy.sparse as sps
+from scipy.optimize.nonlin import NoConvergence
 
 from sem import SEMhat
 
@@ -188,12 +189,18 @@ class PoissonProblem(object):
             elem_id = -1
             for ielem in elem_inds[:max_elem_tries]:
                 nodes = node_phys[etn[ielem]]
-                xref = lmap.phys_to_ref(x[na,:], nodes)
-
-                if np.all(lmap.is_interior(xref)):
-                    elem_id = ielem
-                    ref     = xref.copy()
-                    break
+                try:
+                    xref = lmap.phys_to_ref(x[na,:], nodes)
+                    if np.all(lmap.is_interior(xref)):
+                        elem_id = ielem
+                        ref     = xref.copy()
+                        break
+                except NoConvergence:
+                    # Ignore when the scipy nonlinear solver fails to
+                    # converge. The nonlinear solver will often crap
+                    # out if the point is far outside the element we
+                    # are trying to check.
+                    pass
 
             if elem_id==-1:
                 raise LookupError("Element not found: "+str(x))
