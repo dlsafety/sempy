@@ -95,6 +95,7 @@ class PoissonProblem(object):
         self.D1T = lambda A: kron_IID(DT, A)
         self.D2T = lambda A: kron_IDI(DT, A)
         self.D3T = lambda A: kron_DII(DT, A)
+        self.D = D
 
         # Build diagonal mass matrix B
         B = sps.dia_matrix((wvals, 0),
