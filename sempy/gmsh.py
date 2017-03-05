@@ -113,6 +113,9 @@ class MeshGmsh(object):
         # Build set of edges and edge maps
         elem_to_edge = np.zeros((len(elem_to_vertex),
                                 geom.n_edges), dtype=np.int)
+        elem_to_edge_dir = np.zeros((len(elem_to_vertex),
+                                     geom.n_edges), dtype=np.int)
+
         edge_id = {}
         eid = 0
         for ielem in range(len(elem_to_vertex)):
@@ -120,6 +123,8 @@ class MeshGmsh(object):
             elem_edges = etv[geom.edge_to_vertex]
             for iedge in range(geom.n_edges):
                 edge = elem_edges[iedge]
+                # Edge direction
+                elem_to_edge_dir[ielem, iedge] = 1 if edge[0]<edge[1] else -1
                 edge.sort()
                 t = tuple(edge)
                 if not t in edge_id:
@@ -134,12 +139,15 @@ class MeshGmsh(object):
             edge_to_vertex[v, :] = k
         assert np.all(edge_to_vertex[:,0]<edge_to_vertex[:,1])
         self.elem_to_edge = elem_to_edge
+        self.elem_to_edge_dir = elem_to_edge_dir
         self.edge_to_vertex = edge_to_vertex
         self.edge_id = edge_id
 
         # Build set of faces and face maps
         elem_to_face = np.zeros((len(elem_to_vertex),
                                  geom.n_faces), dtype=np.int)
+        elem_to_face_dir = np.zeros((len(elem_to_vertex),
+                                     geom.n_faces), dtype=np.int)
         face_id = {}
         fid = 0
         for ielem in range(len(elem_to_vertex)):
@@ -147,6 +155,8 @@ class MeshGmsh(object):
             elem_faces = etv[geom.face_to_vertex]
             for iface in range(geom.n_faces):
                 face = elem_faces[iface]
+                # How far to rotate the face
+                elem_to_face_dir[ielem,iface] = np.argmin(face)
                 face.sort()
                 t = tuple(face)
                 if not t in face_id:
@@ -164,6 +174,7 @@ class MeshGmsh(object):
         assert np.all(face_to_vertex[:,1]<face_to_vertex[:,2])
         assert np.all(face_to_vertex[:,2]<face_to_vertex[:,3])
         self.elem_to_face = elem_to_face
+        self.elem_to_face_dir = elem_to_face_dir
         self.face_to_vertex = face_to_vertex
         self.face_id = face_id
 
@@ -279,13 +290,39 @@ class MeshGmsh(object):
 
         edge_to_dof = self.edge_to_dof
         elem_to_edge = self.elem_to_edge
-        betd = basis.edge_to_dof.ravel()
-        elem_to_dof[:,betd] = edge_to_dof[elem_to_edge].reshape((self.n_elems, -1))
+        elem_to_edge_dir = self.elem_to_edge_dir
+        betd = basis.edge_to_dof
+        for ielem in range(self.n_elems):
+            for iedge in range(basis.n_edges):
+                dofs = edge_to_dof[elem_to_edge[ielem,iedge]]
+                if elem_to_edge_dir[ielem,iedge]==-1:
+                    dofs = dofs[::-1]
+                elem_to_dof[ielem,betd[iedge]] = dofs
 
         face_to_dof = self.face_to_dof
         elem_to_face = self.elem_to_face
-        bftd = basis.face_to_dof.ravel()
-        elem_to_dof[:,bftd] = face_to_dof[elem_to_face].reshape((self.n_elems, -1))
+        elem_to_face_dir = self.elem_to_face_dir
+        bftd = basis.face_to_dof
+        ne_dofs = basis.n_dof_per_edge
+        for ielem in range(self.n_elems):
+            for iface in range(basis.n_faces):
+                dofs = face_to_dof[elem_to_face[ielem,iface]]
+                dofs = dofs.reshape((ne_dofs,ne_dofs))
+                d = elem_to_face_dir[ielem, iface]
+                # Handle rotation in element faces. I belive that they
+                # will never be transposed, but should add a check
+                # just in case
+                if d==1:
+                    dofs = dofs.T
+                    dofs = dofs[:,::-1]
+                elif d==2:
+                    dofs = dofs.T
+                    dofs = dofs[::-1,:]
+                elif d==3:
+                    dofs = dofs[::-1,:]
+                    dofs = dofs[:,::-1]
+
+                elem_to_dof[ielem,bftd[iface]] = dofs.ravel()
 
         bubble_to_dof = self.bubble_to_dof
         bbtd = basis.bubble_to_dof.ravel()
