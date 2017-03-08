@@ -3,6 +3,17 @@ import numpy as np
 na = np.newaxis
 import scipy.optimize
 
+def cube_points(x):
+
+    n  = len(x)
+    X = np.zeros((n,n,n,3))
+    X[:,:,:,0] = x[na,na,:]
+    X[:,:,:,1] = x[na,:,na]
+    X[:,:,:,2] = x[:,na,na]
+
+    return X.reshape((-1,3))
+
+
 class LinearIsopMap(object):
 
 
@@ -48,6 +59,9 @@ class LinearIsopMap(object):
 
         return P
 
+    # Ref points used to find init guess for non-linear solver
+    _Xgref  = cube_points(np.linspace(-1,1,20))
+    # Non-linear solver tolerance
     _tol_phys_to_ref = 1e-14
     def phys_to_ref(self, Y, nodes):
 
@@ -55,11 +69,20 @@ class LinearIsopMap(object):
         rtop   = self.ref_to_phys
 
         # Build initial guess
+        #####################
         center = rtop(np.array([[0.,0.,0.]]), nodes).ravel()
-        h  = np.max(np.abs(nodes[1]-nodes[0]))
-        x0 = (Y-center)*2.0/h
+        mins, maxs = np.sort(nodes, axis=0)[[0,-1]]
+
+        # Find the closest point to Y to use as our initial guess
+        Xgref = self._Xgref
+        Yg    = rtop(Xgref, nodes)
+        x0 = np.zeros_like(Y)
+        for i in range(len(Y)):
+            dist2 = np.sum((Yg-Y[i])**2, axis=-1)
+            x0[i] = Xgref[np.argmin(dist2)]
 
         # Solve the non-linear system
+        #############################
         def F(x):
             return Y-rtop(x, nodes)
 
