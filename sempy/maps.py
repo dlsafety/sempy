@@ -60,7 +60,7 @@ class LinearIsopMap(object):
         return P
 
     # Ref points used to find init guess for non-linear solver
-    _Xgref  = cube_points(np.linspace(-1,1,20))
+    _Xgref  = cube_points(np.linspace(-1,1,10))
     # Non-linear solver tolerance
     _tol_phys_to_ref = 1e-14
     def phys_to_ref(self, Y, nodes):
