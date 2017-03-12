@@ -89,17 +89,19 @@ class LinearIsopMap(object):
             # Newton-Raphson inversion
             dist2 = np.sum((Yg-Y[i])**2, axis=-1)
             xref = Xgref[np.argmin(dist2)]
-            d0 = F(xref)
+            d  = F(xref)
+            d0 = d.copy()
 
             curr_iter = 0
-            while np.max(np.abs(F(xref)))>tol and curr_iter<max_iter:
+            while np.max(np.abs(d))>tol and curr_iter<max_iter:
                 J = jacb(xref)
-                xref = xref-np.linalg.solve(J, F(xref))
+                xref = xref-np.linalg.solve(J, d)
+                d = F(xref)
                 curr_iter += 1
 
-            if not np.max(np.abs(F(xref)))<tol:
+            if not np.max(np.abs(d))<tol:
                 s = "Phys to ref map failed to converge: "
-                s += str(np.max(np.abs(F(xref))))
+                s += str(np.max(np.abs(d)))
                 raise NoConvergence(s)
 
             ref[i] = xref
