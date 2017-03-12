@@ -164,7 +164,7 @@ class PoissonProblem(object):
 
         return y
 
-    def find_elem_ref(self, X, max_elem_tries=27):
+    def find_elem_ref(self, X, max_elem_tries=27, check_tol=1e-6):
 
         assert X.ndim==2 and X.shape[1]==3
 
@@ -177,6 +177,7 @@ class PoissonProblem(object):
         etd       = self.topo.elem_to_dof
         lmap      = self.lmap
         semh      = self.semh
+        rtop      = lmap.ref_to_phys
 
         max_elem_tries = min(self.n_elem, max_elem_tries)
 
@@ -204,6 +205,11 @@ class PoissonProblem(object):
 
             if elem_id==-1:
                 raise LookupError("Element not found: "+str(x))
+
+            # Check that the result makes sense
+            d = rtop(ref[na,:], nodes)-x
+            if np.max(np.abs(d))>check_tol:
+                raise LookupError("Bad (elem, ref) pair: "+str(x))
 
             relem[ix]  = ielem
             rref[ix,:] = ref
