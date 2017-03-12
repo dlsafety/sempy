@@ -2,8 +2,7 @@
 import numpy as np
 na = np.newaxis
 import scipy.sparse as sps
-from scipy.optimize.nonlin import NoConvergence
-
+from maps import NoConvergence
 from sem import SEMhat
 
 from tensortools import kron3, kron_DII, kron_IDI, kron_IID

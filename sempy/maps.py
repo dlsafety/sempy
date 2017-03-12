@@ -14,6 +14,9 @@ def cube_points(x):
     return X.reshape((-1,3))
 
 
+class NoConvergence(Exception):
+    pass
+
 class LinearIsopMap(object):
 
 
@@ -60,42 +63,48 @@ class LinearIsopMap(object):
         return P
 
     # Ref points used to find init guess for non-linear solver
-    _Xgref  = cube_points(np.linspace(-1,1,10))
+    _Xgref  = cube_points(np.linspace(-1,1,20))
     # Non-linear solver tolerance
-    _tol_phys_to_ref = 1e-14
+    _tol_phys_to_ref = 1e-12
     def phys_to_ref(self, Y, nodes):
 
-        solve = scipy.optimize.broyden1
+        max_iter = 1000
         rtop   = self.ref_to_phys
-
-        # Build initial guess
-        #####################
-        center = rtop(np.array([[0.,0.,0.]]), nodes).ravel()
-        mins, maxs = np.sort(nodes, axis=0)[[0,-1]]
+        tol = self._tol_phys_to_ref
 
         # Find the closest point to Y to use as our initial guess
         Xgref = self._Xgref
-        Yg    = rtop(Xgref, nodes)
-        x0 = np.zeros_like(Y)
+        Yg = rtop(Xgref, nodes)
+
+        ref = np.zeros_like(Y)
         for i in range(len(Y)):
+
+            # Solve the non-linear system
+            def F(x):
+                return rtop(x[na,:], nodes).ravel()-Y[i]
+
+            def jacb(x):
+                return self.calc_jacb(x[na,:], nodes).reshape((3,3))
+
+            # Newton-Raphson inversion
             dist2 = np.sum((Yg-Y[i])**2, axis=-1)
-            x0[i] = Xgref[np.argmin(dist2)]
+            xref = Xgref[np.argmin(dist2)]
+            d0 = F(xref)
 
-        # Solve the non-linear system
-        #############################
-        def F(x):
-            return Y-rtop(x, nodes)
+            curr_iter = 0
+            while np.max(np.abs(F(xref)))>tol and curr_iter<max_iter:
+                J = jacb(xref)
+                xref = xref-np.linalg.solve(J, F(xref))
+                curr_iter += 1
 
-        f_tol = self._tol_phys_to_ref
-        if np.max(np.abs(F(x0)))<f_tol:
-            # For some godforsaken reason the non-linear solver fails
-            # when the initial guess is too good
-            return x0
-        else:
-            # Same thing for each of the dimensions
-            x0 += 0.1*(np.abs(F(x0))<1e-6)
-            xref = solve(F, x0, f_tol=f_tol)
-            return xref
+            if not np.max(np.abs(F(xref)))<tol:
+                s = "Phys to ref map failed to converge: "
+                s += str(np.max(np.abs(F(xref))))
+                raise NoConvergence(s)
+
+            ref[i] = xref
+
+        return ref
 
     def calc_jacb(self, X, nodes):
 
