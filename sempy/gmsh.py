@@ -102,7 +102,9 @@ class MeshGmsh(object):
         self.boundary_vertices = boundary_vertices
 
         # Spot check the numberings
-        assert np.all(np.unique(elem_to_node)==np.arange(len(nodes)))
+        # GMSH also spits out the control point locations
+        # These may not line up with DOFs
+        #assert np.all(np.unique(elem_to_node)==np.arange(len(nodes)))
 
 
         ### Build connectivity arrays
