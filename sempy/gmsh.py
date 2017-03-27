@@ -79,9 +79,23 @@ class MeshGmsh(object):
             ind = quad_inds[i]
             bf2n[i,:] = mr.elements[ind]
 
-        # Nodes array
+        ### Nodes array
         nodes = np.array(mr.points)
+
+        ## Remove nodes not linked to elements.
+        # These show up when nodes used to construct the mesh are not
+        # nodes of the generated elements.
+        used_nodes = np.unique(elem_to_node)
+        max_node = np.max(nodes)
+        unused_nodes = set(np.arange(max_node))-set(used_nodes)
+        unused_nodes = np.sort(list(unused_nodes))
+        for inode in unused_nodes[::-1]:
+            elem_to_node[elem_to_node>inode] -= 1
+            bf2n[bf2n>inode] -= 1
+
+        nodes = nodes[used_nodes]
         self.nodes = nodes
+        assert np.all(np.unique(elem_to_node)==np.arange(len(nodes)))
 
         vertices = nodes
         self.vertices = vertices
@@ -100,12 +114,6 @@ class MeshGmsh(object):
 
         boundary_vertices = np.unique(bndy_face_to_node.ravel())
         self.boundary_vertices = boundary_vertices
-
-        # Spot check the numberings
-        # GMSH also spits out the control point locations
-        # These may not line up with DOFs
-        #assert np.all(np.unique(elem_to_node)==np.arange(len(nodes)))
-
 
         ### Build connectivity arrays
         #############################
