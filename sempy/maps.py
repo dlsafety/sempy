@@ -161,7 +161,7 @@ class LinearIsopMap(object):
 
         return J
 
-    def is_interior(self, X, tol=1e-12):
+    def is_interior(self, X, tol=1e-10):
         """ Checks if points are in the interior of the reference element
         """
 
